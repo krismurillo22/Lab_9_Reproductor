@@ -35,7 +35,6 @@ public class Controles {
     private void empezarPlay(Cancion cancion, int startFrame) throws IOException, JavaLayerException {
         fileInputStream = new FileInputStream(cancion.getFile());
         player = new AdvancedPlayer(fileInputStream);
-
         playThread = new Thread(() -> {
             try {
                 estaSonando = true;

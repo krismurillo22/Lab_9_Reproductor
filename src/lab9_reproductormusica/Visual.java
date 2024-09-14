@@ -25,6 +25,7 @@ public class Visual extends JFrame {
     private JLabel imagenLabel;
     private File carpetaMusica;
     private Cancion canActualPlay = null;
+    private JTextArea infoCancionTextArea; 
 
     public Visual() {
         controles = new Controles();
@@ -32,6 +33,8 @@ public class Visual extends JFrame {
         /*
         Aqui estan todas las canciones guardadas y por cada cancion es una carpeta con la cancion adentro, la imagen
         y los datos agregados de dicha cancion.
+        
+        Para cambiar de cancion se tiene que dar stop o pause primero para poder reproducir la otra
          */
         carpetaMusica = new File("Musica");
         if (!carpetaMusica.exists()) {
@@ -40,7 +43,7 @@ public class Visual extends JFrame {
 
         setTitle("Reproductor de Musica");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(600, 400);
+        setSize(900, 500);
         setLayout(new BorderLayout());
 
         JLabel cancionSeleccionada = new JLabel("Selecciona la cancion que deseas escuchar:", JLabel.CENTER);
@@ -52,6 +55,7 @@ public class Visual extends JFrame {
         listado.addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
                 ImagenCancionSeleccionada();
+                mostrarInfoCancion();
             }
         });
 
@@ -59,6 +63,12 @@ public class Visual extends JFrame {
         imagenLabel.setHorizontalAlignment(JLabel.CENTER);
         imagenLabel.setVerticalAlignment(JLabel.CENTER);
 
+        infoCancionTextArea = new JTextArea("Información de la canción seleccionada:\n\nSelecciona una canción para ver los detalles.");
+        infoCancionTextArea.setEditable(false);
+        infoCancionTextArea.setLineWrap(true);
+        infoCancionTextArea.setWrapStyleWord(true);
+        infoCancionTextArea.setFont(new Font("Arial", Font.BOLD, 14));
+        
         Dimension buttonSize = new Dimension(50, 50);
         ImageIcon playIcon = new ImageIcon(new ImageIcon("src/lab9_reproductormusica/play.png").getImage().getScaledInstance(32, 32, Image.SCALE_SMOOTH));
         ImageIcon pauseIcon = new ImageIcon(new ImageIcon("src/lab9_reproductormusica/pause.png").getImage().getScaledInstance(32, 32, Image.SCALE_SMOOTH));
@@ -76,31 +86,46 @@ public class Visual extends JFrame {
 
         JButton stopButton = new JButton(stopIcon);
         stopButton.setPreferredSize(buttonSize);
-        stopButton.setBackground(new Color(190, 37, 174));
+        stopButton.setBackground(new Color(197, 128, 190));
         stopButton.setFocusPainted(false);
 
         JButton addButton = new JButton("Agregar cancion");
         addButton.setPreferredSize(new Dimension(150, 50));
-        addButton.setBackground(new Color(197, 128, 190));
+        addButton.setBackground(new Color(190, 37, 174));
         addButton.setForeground(Color.WHITE);
         addButton.setFont(new Font("Arial", Font.BOLD, 14));
         addButton.setFocusPainted(false);
-
+        
+        JButton deleteButton = new JButton("Eliminar canción");
+        deleteButton.setPreferredSize(new Dimension(150, 50));
+        deleteButton.setBackground(new Color(190, 37, 174));
+        deleteButton.setForeground(Color.WHITE);
+        deleteButton.setFont(new Font("Arial", Font.BOLD, 14));
+        deleteButton.setFocusPainted(false);
+        
         playButton.addActionListener(e -> playCancionSelec());
         pauseButton.addActionListener(e -> controles.pause());
         stopButton.addActionListener(e -> controles.stop());
         addButton.addActionListener(e -> panelAgregarCancion());
+        deleteButton.addActionListener(e -> eliminarCancion());
 
         JPanel controlPanel = new JPanel();
-        controlPanel.add(playButton);
+        controlPanel.add(deleteButton);
         controlPanel.add(pauseButton);
+        controlPanel.add(playButton);
         controlPanel.add(stopButton);
         controlPanel.add(addButton);
+        
 
-        JPanel mainPanel = new JPanel(new GridLayout(1, 2));
+        JPanel mainPanel = new JPanel(new GridLayout(1, 3));
+        
         JPanel listadoCan = new JPanel(new BorderLayout());
         listadoCan.add(cancionSeleccionada, BorderLayout.NORTH);
         listadoCan.add(new JScrollPane(listado), BorderLayout.CENTER);
+        
+        JPanel infoPanel = new JPanel(new BorderLayout());
+        infoPanel.add(new JScrollPane(infoCancionTextArea), BorderLayout.CENTER);
+        mainPanel.add(infoPanel);
         mainPanel.add(listadoCan);
         mainPanel.add(imagenLabel);
         add(mainPanel, BorderLayout.CENTER);
@@ -122,6 +147,18 @@ public class Visual extends JFrame {
         }
     }
 
+    private void mostrarInfoCancion() {
+        int index = listado.getSelectedIndex();
+        if (index != -1) {
+            Cancion cancionSeleccionada = funciones.getCancion(index);
+            infoCancionTextArea.setText("\n''" + cancionSeleccionada.getNombre() + "''\n" +
+                                        "\n- - - - - - - - - - - - - - - - - - - - - - - - - - - \n"+
+                                        "\nArtista: " + cancionSeleccionada.getArtista() + "\n" +
+                                        "\nDuración: " + cancionSeleccionada.getDuracion() + "\n" +
+                                        "\nGénero: " + cancionSeleccionada.getGenero());
+        }
+    }
+    
     private void playCancionSelec() {
         int index = listado.getSelectedIndex();
         if (index != -1) {
@@ -286,6 +323,29 @@ public class Visual extends JFrame {
         }
     }
 
+    private void eliminarCancion() {
+        int index = listado.getSelectedIndex();
+        if (index != -1) {
+            Cancion cancionSeleccionada = funciones.getCancion(index);
+            File songFolder = new File(carpetaMusica, cancionSeleccionada.getNombre());
+            int confirm = JOptionPane.showConfirmDialog(this, "¿Estás seguro de que deseas eliminar la canción?", "Confirmar eliminación", JOptionPane.YES_NO_OPTION);
+            if (confirm == JOptionPane.YES_OPTION) {
+                if (songFolder.exists()) {
+                    for (File file : songFolder.listFiles()) {
+                        file.delete();
+                    }
+                    songFolder.delete();
+                }
+                funciones.eliminarCancion(index);
+                actualizarLista();
+                infoCancionTextArea.setText("Información de la canción seleccionada:\n\nSelecciona una canción para ver los detalles.");
+                imagenLabel.setIcon(null);
+            }
+        } else {
+            JOptionPane.showMessageDialog(this, "Selecciona una canción para eliminar.", "Error", JOptionPane.WARNING_MESSAGE);
+        }
+    }
+    
     public static void main(String[] args) {
         new Visual();
     }

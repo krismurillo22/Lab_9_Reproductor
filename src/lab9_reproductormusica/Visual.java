@@ -265,7 +265,7 @@ public class Visual extends JFrame {
             String artista = artistaField.getText();
             String duracion = duracionField.getText();
             String genero = generoField.getText();
-            if (!nombre.isEmpty() && !artista.isEmpty() && !duracion.isEmpty() && imageIcon[0] != null) {
+            if (!nombre.isEmpty() && !artista.isEmpty() && !duracion.isEmpty() && imageIcon[0] != null && !genero.isEmpty()) {
                 newTrack[0] = new Cancion(nombre, artista, duracion, genero, imageIcon[0], musicFile);
                 dialog.dispose();
             } else {
